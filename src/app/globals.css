@@ -1,26 +1,117 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+/* 1. ربط المتغيرات بنظام Tailwind (Mapping) */
+/* stylelint-disable-next-line at-rule-no-unknown */
+@theme {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* 2. تعريف قيم الألوان (The Values) */
+:root {
+  /* الخلفية: رمادي ثلجي فاتح */
+  --background: #f8fafc;
+  /* النصوص: كحلي غامق */
+  --foreground: #0f172a;
+
+  /* اللون الأساسي: الأزرق */
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+
+  /* البطاقات: أبيض */
+  --card: #ffffff;
+  --card-foreground: #0f172a;
+
+  /* الحدود: رمادي خفيف */
+  --border: #e2e8f0;
 }
 
+/* إعدادات الخط (اختياري لضمان تطبيق الخط العربي) */
 body {
-  background: var(--background);
+  font-family: var(--font-cairo), sans-serif;
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+}
+.react-tel-input {
+  font-family: var(--font-cairo) !important;
+  direction: ltr !important;
+  /* هام: أزلنا overflow: hidden للسماح للقائمة بالظهور */
+}
+
+/* 2. حقل كتابة الأرقام */
+.react-tel-input .form-control {
+  width: 100% !important;
+  height: 50px !important;
+  padding-left: 80px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  font-size: 1rem !important;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.react-tel-input .form-control:focus {
+  border-color: #3b82f6 !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
+}
+
+/* 3. منطقة العلم (الزر الجانبي) */
+.react-tel-input .flag-dropdown {
+  background-color: #f1f5f9 !important;
+  border: 1px solid #e2e8f0 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  border-top-left-radius: 0.75rem !important;
+  border-bottom-left-radius: 0.75rem !important;
+  width: 70px !important;
+  bottom: 1px !important;
+  top: 1px !important;
+  left: 1px !important;
+}
+
+.react-tel-input .selected-flag {
+  background-color: transparent !important;
+  width: 100% !important;
+  border-radius: 0.75rem !important;
+  padding: 0 0 0 6px !important;
+}
+
+.react-tel-input .iti-flag {
+  transform: scale(1.4);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.react-tel-input .arrow {
+  border-top-color: #475569 !important;
+  margin-left: 8px !important;
+}
+
+/* 4. القائمة المنسدلة */
+.react-tel-input .country-list {
+  margin-top: 8px !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+  z-index: 9999 !important;
+  background-color: white !important;
+  font-family: var(--font-cairo) !important;
+  text-align: left !important;
+}
+
+.react-tel-input .country-list .country {
+  padding: 10px 15px !important;
+  transition: background 0.2s;
+}
+
+.react-tel-input .country-list .country:hover {
+  background-color: #f8fafc !important;
+}
+
+.react-tel-input .country-list .country.highlight {
+  background-color: #eff6ff !important;
 }
