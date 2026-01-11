@@ -14,30 +14,24 @@
 
 /* 2. تعريف قيم الألوان */
 :root {
-  /* الخلفية: رمادي ثلجي فاتح */
-  --background: #f8fafc;
-  /* النصوص: كحلي غامق */
-  --foreground: #0f172a;
+  /* تم توحيد الألوان لتكون غامقة دائماً بغض النظر عن النظام */
+  --background: #0f172a; /* هذا هو كود bg-gray-900 */
+  --foreground: #ffffff; /* النص أبيض دائماً */
 
-  /* اللون الأساسي: الأزرق */
+  /* الألوان الإضافية */
   --primary: #2563eb;
   --primary-foreground: #ffffff;
-
-  /* البطاقات: أبيض */
-  --card: #ffffff;
-  --card-foreground: #0f172a;
-
-  /* الحدود: رمادي خفيف */
-  --border: #e2e8f0;
+  --card: #1e293b; /* لون الكارد غامق */
+  --card-foreground: #ffffff;
+  --border: #334155;
 }
 
-/* إعدادات الخط */
+/* نجبر المتصفح على الخلفية الغامقة حتى في مناطق التمرير (Safari Scroll) */
 body {
   font-family: var(--font-cairo), sans-serif;
   background-color: var(--background);
   color: var(--foreground);
 }
-
 /* =========================================
    تنسيقات حقل الهاتف (Phone Input Styles)
    ========================================= */
