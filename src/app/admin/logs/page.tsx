@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-// 1. استبدال المكتبة المسببة للمشكلة
-import { createClient } from '@supabase/supabase-js';
 import { Loader2, AlertTriangle, RefreshCw, Database } from 'lucide-react';
-
-// 2. تهيئة العميل يدوياً
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 interface SystemLog {
   id: string;
@@ -26,18 +18,21 @@ export default function AdminLogsPage() {
 
   const fetchLogs = async () => {
     setLoading(true);
-    
-    // جلب البيانات من job_game schema
-    const { data, error } = await supabase
-      .schema('job_game') // 👈 التأكد من استخدام السكيما الصحيحة
-      .from('system_logs')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(50);
-
-    if (data) setLogs(data);
-    if (error) console.error('Error fetching logs:', error);
-    setLoading(false);
+    try {
+      // الطلب الآن يذهب للـ API الخاص بنا
+      const response = await fetch('/api/admin/logs', {
+        cache: 'no-store' // لضمان عدم تخزين النسخة القديمة
+      });
+      
+      if (!response.ok) throw new Error('Failed to fetch logs');
+      
+      const data = await response.json();
+      setLogs(data);
+    } catch (error) {
+      console.error('Error fetching logs:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -70,7 +65,7 @@ export default function AdminLogsPage() {
 
         {/* Table Container */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          {loading && logs.length === 0 ? (
+          {loading ? (
             <div className="p-12 text-center flex justify-center text-gray-400">
                <Loader2 className="animate-spin w-8 h-8" />
             </div>
@@ -86,37 +81,37 @@ export default function AdminLogsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-red-50/40 transition-colors group">
-                      <td className="p-4 text-gray-500 text-sm whitespace-nowrap" dir="ltr">
-                        {new Date(log.created_at).toLocaleString('en-US', { hour12: false })}
-                      </td>
-                      <td className="p-4">
-                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-mono border border-gray-200">
-                          {log.source}
-                        </span>
-                      </td>
-                      <td className="p-4 text-gray-800 font-medium text-sm">
-                        {log.message}
-                      </td>
-                      <td className="p-4">
-                        {log.details ? (
-                          <details className="relative group/details">
-                            <summary className="list-none cursor-pointer text-xs font-bold text-blue-600 hover:text-blue-800 select-none bg-blue-50 px-3 py-1 rounded-full w-fit">
-                              عرض JSON
-                            </summary>
-                            <div className="absolute left-0 mt-2 w-96 max-h-60 overflow-auto bg-slate-900 text-green-400 p-3 rounded-lg shadow-xl z-10 text-xs font-mono hidden group-open/details:block" dir="ltr">
-                              <pre>{JSON.stringify(log.details, null, 2)}</pre>
-                            </div>
-                          </details>
-                        ) : (
-                          <span className="text-gray-300 text-xs">-</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                  
-                  {logs.length === 0 && (
+                  {logs.length > 0 ? (
+                    logs.map((log) => (
+                      <tr key={log.id} className="hover:bg-red-50/40 transition-colors group">
+                        <td className="p-4 text-gray-500 text-sm whitespace-nowrap" dir="ltr">
+                          {new Date(log.created_at).toLocaleString('en-US', { hour12: false })}
+                        </td>
+                        <td className="p-4">
+                          <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-mono border border-gray-200">
+                            {log.source}
+                          </span>
+                        </td>
+                        <td className="p-4 text-gray-800 font-medium text-sm">
+                          {log.message}
+                        </td>
+                        <td className="p-4">
+                          {log.details ? (
+                            <details className="relative group/details">
+                              <summary className="list-none cursor-pointer text-xs font-bold text-blue-600 hover:text-blue-800 select-none bg-blue-50 px-3 py-1 rounded-full w-fit">
+                                عرض JSON
+                              </summary>
+                              <div className="absolute left-0 mt-2 w-96 max-h-60 overflow-auto bg-slate-900 text-green-400 p-3 rounded-lg shadow-xl z-10 text-xs font-mono hidden group-open/details:block" dir="ltr">
+                                <pre>{JSON.stringify(log.details, null, 2)}</pre>
+                              </div>
+                            </details>
+                          ) : (
+                            <span className="text-gray-300 text-xs">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
                     <tr>
                       <td colSpan={4} className="p-12 text-center">
                         <div className="flex flex-col items-center justify-center text-gray-400">
