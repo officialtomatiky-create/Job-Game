@@ -30,13 +30,13 @@ export default function BillingPage() {
 
             <div className="p-4 bg-gray-50 rounded-xl">
               <p className="text-sm text-gray-500 mb-1">اسم المستفيد</p>
-              <p className="font-bold text-slate-800 text-lg">مؤسسة نقطة البرمجيات</p>
+              <p className="font-bold text-slate-800 text-lg">مـ*** عـ** ****** مـ*** مـ****</p>
             </div>
 
             <div className="flex gap-4">
               <div className="flex-1 p-4 bg-gray-50 rounded-xl relative group cursor-pointer hover:bg-blue-50 transition-colors">
                 <p className="text-sm text-gray-500 mb-1">رقم الحساب</p>
-                <p className="font-mono font-bold text-slate-800 dir-ltr">1234567890123456</p>
+                <p className="font-mono font-bold text-slate-800 dir-ltr">077050010006080918210</p>
                 <div className="absolute top-4 left-4 text-gray-300 group-hover:text-blue-500">
                    📋
                 </div>
@@ -45,7 +45,7 @@ export default function BillingPage() {
 
             <div className="p-4 bg-gray-50 rounded-xl relative group cursor-pointer hover:bg-blue-50 transition-colors">
               <p className="text-sm text-gray-500 mb-1">الآيبان (IBAN)</p>
-              <p className="font-mono font-bold text-slate-800 dir-ltr">SA1234000000000000000000</p>
+              <p className="font-mono font-bold text-slate-800 dir-ltr">SA1480000865608010918210</p>
                <div className="absolute top-4 left-4 text-gray-300 group-hover:text-blue-500">
                    📋
                 </div>

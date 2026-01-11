@@ -305,7 +305,7 @@ export default function Dashboard() {
         </button>
         <div className="text-center md:text-right order-1 md:order-2">
           <h1 className="text-2xl md:text-3xl font-bold text-slate-800">نظام Job_Game</h1>
-          <p className="text-gray-500 mt-1 text-sm md:text-base">إدارة حسابات الواتساب وحملات التوظيف الذكية</p>
+          <p className="text-gray-500 mt-1 text-sm md:text-base">احصل على وظيفة أحلامك بسرعة</p>
         </div>
       </div>
 
@@ -326,7 +326,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mb-4 flex justify-between items-center px-2">
-        <h2 className="text-xl font-bold text-slate-800">الحسابات النشطة (Instances)</h2>
+        <h2 className="text-xl font-bold text-slate-800">الحسابات النشطة</h2>
         <button onClick={() => fetchPlayers()} className="text-gray-400 hover:text-blue-600 transition-colors p-2" title="تحديث يدوي">
           <RefreshCw size={18} />
         </button>
@@ -374,7 +374,7 @@ export default function Dashboard() {
                           onClick={() => { setSelectedPlayerForConnect(player); setConnectStep('method'); }}
                           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-all cursor-pointer shadow-sm"
                         >
-                          <WifiOff size={14} /> ربط
+                          <WifiOff size={14} /> ربط الحساب
                         </button>
                       )}
                     </td>
@@ -396,7 +396,7 @@ export default function Dashboard() {
                           href={`/dashboard/campaign/${player.player_id}`}
                           className="flex items-center gap-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-100 px-3 py-2 rounded-lg text-xs font-bold transition-all"
                         >
-                          <Briefcase size={14} /> إدارة
+                          <Briefcase size={14} />إدارة الحملة
                         </Link>
                         <PlayerActionsDropdown player={player} />
                       </div>
@@ -439,7 +439,7 @@ export default function Dashboard() {
                         onClick={() => { setSelectedPlayerForConnect(player); setConnectStep('method'); }}
                         className="inline-flex items-center gap-1.5 text-xs font-bold text-red-600 hover:underline"
                       >
-                        <WifiOff size={14} /> اضغط للربط
+                        <WifiOff size={14} /> اضغط لربط الحساب
                       </button>
                     )}
                   </div>
