@@ -10,14 +10,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Phone number is required' }, { status: 400 });
     }
 
-    // هنا سنرسل الطلب إلى N8N Webhook الجديد المخصص للـ Pairing Code
-    // ملاحظة: استبدل الرابط أدناه برابط الويب هوك الجديد الخاص بك من n8n
-    const N8N_WEBHOOK_URL = `${process.env.N8N_WEBHOOK}/get-pairing-code`; 
+    const n8nBaseUrl = process.env.N8N_WEBHOOK_URL || process.env.N8N_WEBHOOK;
+
+    if (!n8nBaseUrl) {
+        throw new Error('N8N_WEBHOOK is not defined');
+    }
+
+    // ✅ التعديل: استخدام نفس المسار الموحد (instance-connect)
+    const N8N_WEBHOOK_URL = `${n8nBaseUrl.replace(/\/$/, '')}/instance-connect`; 
+
+    console.log('🚀 Sending request to n8n (Pairing):', N8N_WEBHOOK_URL);
 
     const response = await axios.post(N8N_WEBHOOK_URL, {
       phone: phone,
       cleanup: cleanup || false,
-      method: 'pairing_code' // إشارة للمحرك أننا نريد Pairing Code
+      method: 'pairing_code' // إشارة مهمة للمحرك
     });
 
     return NextResponse.json(response.data);

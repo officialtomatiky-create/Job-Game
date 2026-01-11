@@ -5,14 +5,15 @@ import axios from 'axios';
 import { X, Loader2, RefreshCw, Smartphone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-interface ConnectWaModalProps {
+interface ConnectQrCodeModalProps {
   isOpen: boolean;
   onClose: () => void;
   playerPhone: string;
   playerName: string;
 }
 
-export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerName }: ConnectWaModalProps) {
+// ✅ تم تعديل اسم المكون
+export default function ConnectQrCodeModal({ isOpen, onClose, playerPhone, playerName }: ConnectQrCodeModalProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,17 +23,15 @@ export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerNam
   const pollTimer = useRef<NodeJS.Timeout | null>(null);
 
   const fetchQR = async (isBackgroundRefresh = false) => {
-    // لا نعرض اللودر في التحديث الخلفي لعدم إزعاج المستخدم
     if (!isBackgroundRefresh) setLoading(true);
     setError('');
 
     try {
-        // نرسل cleanup: true فقط إذا لم يكن تحديثاً في الخلفية (أي عند فتح المودال أو زر المحاولة)
+        // الاتصال بالـ API المحلي
         const res = await axios.post('/api/integration/get-qr', {
           phone: playerPhone,
           cleanup: !isBackgroundRefresh 
         });
-        
         
       const responseData = res.data;
 
@@ -96,10 +95,9 @@ export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerNam
             <Smartphone size={32} />
           </div>
           
-          <h3 className="text-xl font-bold text-gray-800 mb-1">ربط حساب واتساب</h3>
+          <h3 className="text-xl font-bold text-gray-800 mb-1">ربط عبر QR Code</h3>
           <p className="text-gray-500 text-sm mb-6">{playerName} ({playerPhone})</p>
 
-          {/* تم تعديل min-h إلى 350px لزيادة الطول */}
           <div className="bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl p-4 min-h-[350px] flex flex-col items-center justify-center relative overflow-hidden">
             
             {loading ? (
@@ -116,8 +114,6 @@ export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerNam
               </div>
             ) : qrCode ? (
               <div className="flex flex-col items-center w-full h-full justify-between">
-                
-                {/* QR Code Image - تم زيادة max-h إلى 280px */}
                 <div className="relative flex-1 w-full flex items-center justify-center">
                   <img 
                     src={qrCode.startsWith('data:') ? qrCode : `data:image/png;base64,${qrCode}`} 
@@ -125,13 +121,9 @@ export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerNam
                     className="max-w-full max-h-[280px] object-contain rounded-lg transition-opacity duration-500" 
                   />
                 </div>
-                
-                {/* رسالة التنبيه في الأسفل */}
                 <div className="mt-4 bg-yellow-50 px-3 py-2 rounded-lg border border-yellow-100 w-full text-center">
                   <p className="text-[11px] text-yellow-700 font-medium leading-relaxed">
-                    قد لا ينجح الربط من أول مرة..
-                    <br/>
-                    حاول أكثر من مرة 🔄
+                    امسح الرمز بواسطة واتساب في هاتفك
                   </p>
                 </div>
               </div>
@@ -140,7 +132,7 @@ export default function ConnectWaModal({ isOpen, onClose, playerPhone, playerNam
           </div>
 
           <p className="text-xs text-gray-400 mt-6">
-            افتح واتساب في هاتفك {'>'} الأجهزة المرتبطة {'>'} ربط جهاز
+            الإعدادات {'>'} الأجهزة المرتبطة {'>'} ربط جهاز
           </p>
         </div>
       </div>
