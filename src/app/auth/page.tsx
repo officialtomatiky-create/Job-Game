@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-// تأكد من استيراد العميل الصحيح (Client Component)
+import { useState, useEffect, Suspense } from 'react'; // 👈 أضفنا useEffect و Suspense
+import { useRouter, useSearchParams } from 'next/navigation'; // 👈 أضفنا useSearchParams
 import { createClient } from '@/lib/supabase/client';
 import axios from 'axios';
 import PhoneInput from 'react-phone-input-2';
@@ -17,9 +16,10 @@ const WhatsAppIcon = () => (
   </svg>
 );
 
-export default function AuthPage() {
+// 1. قمنا بنقل المحتوى إلى مكون داخلي لنتمكن من وضعه داخل Suspense
+function AuthForm() {
   const router = useRouter();
-  // استخدام العميل الجديد من المكتبة المحدثة
+  const searchParams = useSearchParams(); // 👈 هوك قراءة الرابط
   const supabase = createClient();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -34,6 +34,13 @@ export default function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [otp, setOtp] = useState('');
   const [error, setError] = useState('');
+
+  // 2. تفعيل وضع "حساب جديد" تلقائياً إذا كان الرابط يحتوي على mode=signup
+  useEffect(() => {
+    if (searchParams.get('mode') === 'signup') {
+      setIsLogin(false);
+    }
+  }, [searchParams]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,9 +58,7 @@ export default function AuthPage() {
         });
 
         if (loginError) {
-          // إذا كان الحساب غير مفعل (Email not confirmed)
           if (loginError.message.includes('Email not confirmed') && authMethod === 'whatsapp') {
-            // نرسل الكود ونفتح النافذة
             await axios.post('/api/auth/send-otp', { phone });
             setShowOtpModal(true);
             return;
@@ -61,7 +66,6 @@ export default function AuthPage() {
           throw loginError;
         }
         
-        // إذا نجح الدخول
         router.push('/dashboard');
         router.refresh();
 
@@ -69,7 +73,6 @@ export default function AuthPage() {
         // --- إنشاء حساب جديد ---
         if (password !== confirmPassword) throw new Error('كلمات المرور غير متطابقة');
 
-        // 1. إنشاء الحساب في نظام Auth
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email: userEmail,
           password,
@@ -78,7 +81,6 @@ export default function AuthPage() {
 
         if (authError) throw authError;
 
-        // 2. إرسال البيانات للسيرفر (ليقوم بالحفظ في قاعدة البيانات وإرسال الرسالة)
         await axios.post('/api/auth/send-otp', { 
           phone: authMethod === 'whatsapp' ? phone : null, 
           user_id: authData.user?.id, 
@@ -104,18 +106,14 @@ export default function AuthPage() {
     setError('');
 
     try {
-      // 1. استدعاء API للتحقق وتفعيل الحساب في قاعدة البيانات
       const res = await axios.post('/api/auth/verify-otp', { identifier: phone, code: otp });
 
       if (res.data.success) {
-        
-        // 🔥🔥 الخطوة الحاسمة: تسجيل الدخول التلقائي 🔥🔥
-        // هذا هو ما يزرع الـ Cookie في المتصفح ويسمح لك بعبور الـ Middleware
         const userEmail = authMethod === 'email' ? email : `${phone}@phone.local`;
         
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: userEmail,
-          password: password, // نستخدم الباسورد المحفوظ في الـ state
+          password: password,
         });
 
         if (loginError) {
@@ -123,9 +121,8 @@ export default function AuthPage() {
             throw new Error('تم التفعيل ولكن فشل الدخول التلقائي. حاول تسجيل الدخول يدوياً.');
         }
 
-        // 2. إغلاق النافذة والتوجيه
         setShowOtpModal(false);
-        router.refresh(); // تحديث الصفحة ليتعرف الناف بار على المستخدم
+        router.refresh();
         router.push('/dashboard');
       }
     } catch (err: any) {
@@ -137,124 +134,119 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans" dir="rtl">
-      <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
-        
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-extrabold text-gray-900">{isLogin ? 'تسجيل الدخول' : 'حساب جديد'}</h2>
-        </div>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border-r-4 border-red-500 rounded-xl flex items-center gap-3">
-            <AlertCircle className="text-red-500" size={20} />
-            <p className="text-sm text-red-700 font-medium">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleAuth} className="space-y-5">
-          <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-6">
-            <button 
-              type="button" 
-              onClick={() => setAuthMethod('whatsapp')}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${authMethod === 'whatsapp' ? 'bg-white text-[#25D366] shadow-sm' : 'text-gray-400'}`}
-            >
-              <WhatsAppIcon /> واتساب
-            </button>
-            <button 
-              type="button" 
-              onClick={() => setAuthMethod('email')}
-              className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${authMethod === 'email' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
-            >
-              <span>📧 البريد</span>
-            </button>
-          </div>
-
-          {!isLogin && (
-            <input 
-              type="text" 
-              placeholder="الاسم الكامل" 
-              required 
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884] focus:bg-white" 
-              value={fullName} 
-              onChange={(e)=>setFullName(e.target.value)}
-            />
-          )}
-          
-          {authMethod === 'whatsapp' ? (
-            <div className="direction-ltr">
-              <PhoneInput 
-                country={'sa'} 
-                value={phone} 
-                onChange={setPhone}
-                
-                // 👇 تفعيل خاصية البحث (مهم جداً لإظهار المربع)
-                enableSearch={true}
-                searchPlaceholder="بحث عن دولة..."
-                searchNotFound="لا توجد نتائج"
-                
-                // التأكد من أن الكلاسات لا تتعارض مع التنسيقات الجديدة
-                containerClass="!w-full" 
-                inputClass="!w-full !h-[54px] !rounded-2xl !border-gray-200 !bg-gray-50 !text-gray-900"
-                buttonClass="!bg-transparent !border-0 !rounded-l-2xl"
-                dropdownClass="!bg-white !text-gray-900"
-              />
-            </div>
-          ) : (
-            // ... باقي الكود لحقل الإيميل
-            <input 
-              type="email" 
-              placeholder="البريد الإلكتروني" 
-              required 
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500" 
-              value={email} 
-              onChange={(e)=>setEmail(e.target.value)}
-            />
-          )}
-
-          <input 
-            type="password" 
-            placeholder="كلمة المرور" 
-            required 
-            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884]" 
-            value={password} 
-            onChange={(e)=>setPassword(e.target.value)}
-          />
-          
-          {!isLogin && (
-            <input 
-              type="password" 
-              placeholder="تأكيد كلمة المرور" 
-              required 
-              className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884]" 
-              value={confirmPassword} 
-              onChange={(e)=>setConfirmPassword(e.target.value)}
-            />
-          )}
-
-          <button 
-            type="submit" 
-            disabled={isLoading} 
-            className="w-full bg-[#00a884] text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-[#008f6f] transition-all flex justify-center items-center"
-          >
-            {isLoading ? <Loader2 className="animate-spin" size={24} /> : 'متابعة'}
-          </button>
-        </form>
-
-        <button 
-          onClick={() => { setIsLogin(!isLogin); setError(''); }} 
-          className="w-full text-center mt-8 text-sm text-gray-400 font-medium"
-        >
-          {isLogin ? 'ليس لديك حساب؟ سجل الآن' : 'لديك حساب؟ دخول'}
-        </button>
+    <div className="max-w-md w-full bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+      
+      <div className="text-center mb-8">
+        <h2 className="text-3xl font-extrabold text-gray-900">{isLogin ? 'تسجيل الدخول' : 'حساب جديد'}</h2>
       </div>
 
-      {showOtpModal && (
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border-r-4 border-red-500 rounded-xl flex items-center gap-3">
+          <AlertCircle className="text-red-500" size={20} />
+          <p className="text-sm text-red-700 font-medium">{error}</p>
+        </div>
+      )}
+
+      <form onSubmit={handleAuth} className="space-y-5">
+        <div className="flex bg-gray-100 p-1.5 rounded-2xl mb-6">
+          <button 
+            type="button" 
+            onClick={() => setAuthMethod('whatsapp')}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${authMethod === 'whatsapp' ? 'bg-white text-[#25D366] shadow-sm' : 'text-gray-400'}`}
+          >
+            <WhatsAppIcon /> واتساب
+          </button>
+          <button 
+            type="button" 
+            onClick={() => setAuthMethod('email')}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all ${authMethod === 'email' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400'}`}
+          >
+            <span>📧 البريد</span>
+          </button>
+        </div>
+
+        {!isLogin && (
+          <input 
+            type="text" 
+            placeholder="الاسم الكامل" 
+            required 
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884] focus:bg-white text-gray-900" 
+            value={fullName} 
+            onChange={(e)=>setFullName(e.target.value)}
+          />
+        )}
+        
+        {authMethod === 'whatsapp' ? (
+          <div className="direction-ltr">
+            <PhoneInput 
+              country={'sa'} 
+              value={phone} 
+              onChange={setPhone}
+              enableSearch={true}
+              searchPlaceholder="بحث عن دولة..."
+              searchNotFound="لا توجد نتائج"
+              containerClass="!w-full" 
+              inputClass="!w-full !h-[54px] !rounded-2xl !border-gray-200 !bg-gray-50 !text-gray-900"
+              buttonClass="!bg-transparent !border-0 !rounded-l-2xl"
+              dropdownClass="!bg-white !text-gray-900"
+            />
+          </div>
+        ) : (
+          <input 
+            type="email" 
+            placeholder="البريد الإلكتروني" 
+            required 
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 text-gray-900" 
+            value={email} 
+            onChange={(e)=>setEmail(e.target.value)}
+          />
+        )}
+
+        <input 
+          type="password" 
+          placeholder="كلمة المرور" 
+          required 
+          className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884] text-gray-900" 
+          value={password} 
+          onChange={(e)=>setPassword(e.target.value)}
+        />
+        
+        {!isLogin && (
+          <input 
+            type="password" 
+            placeholder="تأكيد كلمة المرور" 
+            required 
+            className="w-full p-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#00a884] text-gray-900" 
+            value={confirmPassword} 
+            onChange={(e)=>setConfirmPassword(e.target.value)}
+          />
+        )}
+
+<button 
+        type="submit" 
+        disabled={isLoading} 
+        className="w-full bg-[#00a884] text-white py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-[#008f6f] transition-all flex justify-center items-center"
+      >
+        {isLoading ? <Loader2 className="animate-spin" size={24} /> : 'متابعة'}
+      </button>
+      </form>
+
+      {/* 👇 التعديل: بنفسجي متوسط (فاتح نسبياً) يتحول لغامق عند الهوفر */}
+      <button 
+        onClick={() => { setIsLogin(!isLogin); setError(''); }} 
+        className="w-full text-center mt-8 text-sm text-purple-500 hover:text-purple-800 hover:underline font-bold transition-all duration-300"
+      >
+        {isLogin ? 'ليس لديك حساب؟ سجل الآن' : 'لديك حساب؟ دخول'}
+      </button>      
+      
+      
+            {showOtpModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white p-10 rounded-[2.5rem] w-full max-w-md text-center shadow-2xl">
             <div className="w-20 h-20 bg-[#DCF8C6] rounded-full flex items-center justify-center mx-auto mb-6">
               <WhatsAppIcon />
             </div>
-            <h3 className="text-xl font-bold mt-2">تأكيد الرمز</h3>
+            <h3 className="text-xl font-bold mt-2 text-gray-800">تأكيد الرمز</h3>
             <p className="text-gray-500 text-sm mb-6">أدخل الرمز المرسل إلى {phone}+</p>
             <div className="flex justify-center mb-6" dir="ltr">
               <OtpInput 
@@ -262,7 +254,7 @@ export default function AuthPage() {
                 onChange={setOtp} 
                 numInputs={4} 
                 renderSeparator={<span className="w-4"></span>} 
-                renderInput={(props: any) => <input {...props} className="w-14 h-16 border-2 border-gray-100 rounded-2xl text-2xl font-black text-center focus:border-[#00a884] outline-none"/>}
+                renderInput={(props: any) => <input {...props} className="w-14 h-16 border-2 border-gray-100 rounded-2xl text-2xl font-black text-center focus:border-[#00a884] outline-none text-gray-900"/>}
               />
             </div>
             <button onClick={handleVerifyOtp} disabled={isLoading} className="w-full bg-[#00a884] text-white py-4 rounded-2xl font-bold text-lg shadow-xl shadow-green-100">
@@ -272,6 +264,17 @@ export default function AuthPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// 3. المكون الرئيسي: تغليف النموذج بـ Suspense لضمان عمل useSearchParams بشكل صحيح
+export default function AuthPage() {
+  return (
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-sans" dir="rtl">
+      <Suspense fallback={<div className="text-center p-10"><Loader2 className="animate-spin w-10 h-10 text-gray-400 mx-auto" /></div>}>
+        <AuthForm />
+      </Suspense>
     </div>
   );
 }
