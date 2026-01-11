@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* 1. ربط المتغيرات بنظام Tailwind (Mapping) */
+/* 1. ربط المتغيرات بنظام Tailwind */
 /* stylelint-disable-next-line at-rule-no-unknown */
 @theme {
   --color-background: var(--background);
@@ -12,7 +12,7 @@
   --color-border: var(--border);
 }
 
-/* 2. تعريف قيم الألوان (The Values) */
+/* 2. تعريف قيم الألوان */
 :root {
   /* الخلفية: رمادي ثلجي فاتح */
   --background: #f8fafc;
@@ -31,19 +31,21 @@
   --border: #e2e8f0;
 }
 
-/* إعدادات الخط (اختياري لضمان تطبيق الخط العربي) */
+/* إعدادات الخط */
 body {
   font-family: var(--font-cairo), sans-serif;
   background-color: var(--background);
   color: var(--foreground);
 }
+
+/* =========================================
+   تنسيقات حقل الهاتف (Phone Input Styles)
+   ========================================= */
 .react-tel-input {
   font-family: var(--font-cairo) !important;
   direction: ltr !important;
-  /* هام: أزلنا overflow: hidden للسماح للقائمة بالظهور */
 }
 
-/* 2. حقل كتابة الأرقام */
 .react-tel-input .form-control {
   width: 100% !important;
   height: 50px !important;
@@ -61,7 +63,6 @@ body {
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
 }
 
-/* 3. منطقة العلم (الزر الجانبي) */
 .react-tel-input .flag-dropdown {
   background-color: #f1f5f9 !important;
   border: 1px solid #e2e8f0 !important;
@@ -91,7 +92,6 @@ body {
   margin-left: 8px !important;
 }
 
-/* 4. القائمة المنسدلة */
 .react-tel-input .country-list {
   margin-top: 8px !important;
   border-radius: 12px !important;
@@ -114,4 +114,36 @@ body {
 
 .react-tel-input .country-list .country.highlight {
   background-color: #eff6ff !important;
+}
+
+/* =========================================
+   تنسيقات الأنيميشن (Bouncing Dots)
+   تمت إضافتها باستخدام CSS القياسي لتجنب الأخطاء
+   ========================================= */
+
+@keyframes bounce-dots {
+  0%, 100% {
+    transform: translateY(-25%);
+    animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+  }
+  50% {
+    transform: translateY(0);
+    animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+/* نستخدم اسم كلاس محدد لتجنب التعارض مع Tailwind */
+.animate-bounce {
+  animation: bounce-dots 1s infinite;
+}
+
+/* فترات التأخير */
+.delay-0 {
+  animation-delay: 0ms;
+}
+.delay-100 {
+  animation-delay: 150ms;
+}
+.delay-200 {
+  animation-delay: 300ms;
 }

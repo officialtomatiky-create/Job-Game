@@ -92,7 +92,7 @@ export default function Navbar() {
           <div className="flex">
             <div className="shrink-0 flex items-center">
               <Link href="/" className="text-2xl font-bold text-blue-600 flex items-center gap-1">
-                Job<span className="text-[#00a884]">_Game</span>
+                Game<span className="text-[#00a884]">_Job</span>
               </Link>
             </div>
             
