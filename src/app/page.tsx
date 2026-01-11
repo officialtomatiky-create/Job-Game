@@ -3,8 +3,8 @@ import SiteFooter from '@/components/SiteFooter';
 
 export default function Home() {
   return (
-    // التعديل هنا: حذفنا bg-gray-50 وثبتنا bg-gray-900 لتكون الخلفية سوداء دائماً
-    <main className="min-h-screen flex flex-col bg-gray-900">
+    // 👇 التعديل: أضفنا text-white لأن الافتراضي أصبح أسود الآن
+    <main className="min-h-screen flex flex-col bg-gray-900 text-white">
       
       <HeroSection />
 

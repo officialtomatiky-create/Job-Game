@@ -185,12 +185,22 @@ export default function AuthPage() {
               <PhoneInput 
                 country={'sa'} 
                 value={phone} 
-                onChange={setPhone} 
+                onChange={setPhone}
+                
+                // 👇 تفعيل خاصية البحث (مهم جداً لإظهار المربع)
+                enableSearch={true}
+                searchPlaceholder="بحث عن دولة..."
+                searchNotFound="لا توجد نتائج"
+                
+                // التأكد من أن الكلاسات لا تتعارض مع التنسيقات الجديدة
                 containerClass="!w-full" 
-                inputClass="!w-full !h-[54px] !rounded-2xl !border-gray-200 !bg-gray-50"
+                inputClass="!w-full !h-[54px] !rounded-2xl !border-gray-200 !bg-gray-50 !text-gray-900"
+                buttonClass="!bg-transparent !border-0 !rounded-l-2xl"
+                dropdownClass="!bg-white !text-gray-900"
               />
             </div>
           ) : (
+            // ... باقي الكود لحقل الإيميل
             <input 
               type="email" 
               placeholder="البريد الإلكتروني" 

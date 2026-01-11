@@ -35,7 +35,7 @@ export default function PlayersPage() {
       // نستخدم API القائمة الموجود مسبقاً أو ننشئ واحداً جديداً للأدمن
       // هنا سنستخدم API الأدمن المخصص الذي يفترض أنك أنشأته (أو نستخدم الـ client مباشرة)
       // للسرعة، سنطلب من API قائمة اللاعبين العادية (أو يمكن استخدام supabase client مباشرة هنا)
-      const res = await fetch('/api/players/list?t=' + Date.now()); 
+      const res = await fetch('/api/admin/players/list?t=' + Date.now());
       // ملاحظة: الأفضل إنشاء /api/admin/players/list لجلب بيانات حساسة أكثر
       const data = await res.json();
       if (Array.isArray(data)) {
