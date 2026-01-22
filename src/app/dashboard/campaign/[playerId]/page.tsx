@@ -1,36 +1,72 @@
 'use client';
 
-// 1. استيراد 'use' من react
-import { useState, use } from 'react'; 
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client'; 
-import { Upload, CheckCircle, ArrowRight, Loader2, Briefcase, Building2, MapPin, FileText } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { Upload, CheckCircle, ArrowRight, Loader2, Briefcase, Building2, MapPin, FileText, X } from 'lucide-react';
 import Link from 'next/link';
-import { SAUDI_CITIES } from '@/lib/constants'; 
+import { SAUDI_CITIES } from '@/lib/constants';
 
 interface PageProps {
-  // 2. تعديل النوع ليصبح Promise
   params: Promise<{
     playerId: string;
   }>;
 }
 
+const ALL_CITIES_OPTION = "جميع مدن المملكة";
+
 export default function CampaignPage({ params }: PageProps) {
-  // 3. استخدام use() لفك الـ params
-  const { playerId } = use(params); 
-  
+  const { playerId } = use(params);
+
   const router = useRouter();
   const supabase = createClient();
 
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   // Form State
   const [jobTitle, setJobTitle] = useState('');
   const [companies, setCompanies] = useState('');
-  const [city, setCity] = useState(SAUDI_CITIES[0]);
+
+  const [selectedCities, setSelectedCities] = useState<string[]>([]);
+
   const [notes, setNotes] = useState('');
   const [cvFile, setCvFile] = useState<File | null>(null);
+
+  // متغير مساعد للتحقق من حالة "جميع المدن"
+  const isAllCitiesSelected = selectedCities.includes(ALL_CITIES_OPTION);
+
+  const handleCitySelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const value = e.target.value;
+    if (!value) return;
+
+    if (value === ALL_CITIES_OPTION) {
+      setSelectedCities([ALL_CITIES_OPTION]);
+    }
+    else {
+      // التحقق: هل "جميع مدن المملكة" موجودة مسبقاً؟
+      if (isAllCitiesSelected) {
+        return;
+      }
+
+      if (selectedCities.includes(value)) {
+        return;
+      }
+
+      if (selectedCities.length >= 3) {
+        alert('يمكنك اختيار 3 مدن كحد أقصى للنطاق الجغرافي.');
+        return;
+      }
+
+      setSelectedCities(prev => [...prev, value]);
+    }
+
+    e.target.value = "";
+  };
+
+  const removeCity = (cityToRemove: string) => {
+    setSelectedCities(prev => prev.filter(c => c !== cityToRemove));
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -45,51 +81,59 @@ export default function CampaignPage({ params }: PageProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobTitle || !cvFile) {
-      alert('يرجى تعبئة الحقول المطلوبة ورفع السيرة الذاتية');
+
+    if (!jobTitle || !cvFile || selectedCities.length === 0) {
+      alert('يرجى تعبئة المسمى الوظيفي، اختيار مدينة واحدة على الأقل، ورفع السيرة الذاتية');
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1. رفع ملف الـ CV
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) throw new Error('يرجى تسجيل الدخول أولاً');
+
       const fileName = `${playerId}/${Date.now()}-cv.pdf`;
+
       const { error: uploadError } = await supabase.storage
         .from('resumes')
-        .upload(fileName, cvFile);
+        .upload(fileName, cvFile!);
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        console.error("Storage Error Details:", JSON.stringify(uploadError, null, 2));
+        throw new Error(`فشل رفع الملف: ${uploadError.message}`);
+      }
 
       const { data: { publicUrl } } = supabase.storage
         .from('resumes')
         .getPublicUrl(fileName);
 
-      // 2. الحصول على معرف المستخدم الحالي
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not found');
+      const citiesString = selectedCities.join('، ');
 
-      // 3. حفظ البيانات في الجدول
       const { error: insertError } = await supabase
+        .schema('job_game')
         .from('campaign_requests')
         .insert({
           player_id: playerId,
           user_id: user.id,
           job_title: jobTitle,
           target_companies: companies,
-          target_city: city,
+          target_city: citiesString,
           cv_file_url: publicUrl,
           notes: notes,
           status: 'pending'
         });
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error("Database Insert Error:", JSON.stringify(insertError, null, 2));
+        throw insertError;
+      }
 
       setSuccess(true);
-      
-    } catch (error) {
-      console.error('Error:', error);
-      alert('حدث خطأ أثناء إرسال الطلب. حاول مرة أخرى.');
+
+    } catch (error: any) {
+      console.error('Submission Error:', error);
+      alert(error.message || 'حدث خطأ أثناء إرسال الطلب');
     } finally {
       setLoading(false);
     }
@@ -104,7 +148,7 @@ export default function CampaignPage({ params }: PageProps) {
           </div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">تم استلام طلبك بنجاح!</h2>
           <p className="text-gray-500 mb-8">سيقوم فريقنا بمراجعة البيانات والبدء في جمع الجمهور المستهدف لحملتك.</p>
-          <button 
+          <button
             onClick={() => router.push('/dashboard')}
             className="w-full bg-gray-900 text-white py-3 rounded-xl font-bold hover:bg-gray-800 transition-colors"
           >
@@ -131,15 +175,15 @@ export default function CampaignPage({ params }: PageProps) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8 space-y-6">
-          
+
           {/* Job Title */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <Briefcase size={18} className="text-blue-500"/>
+              <Briefcase size={18} className="text-blue-500" />
               المسمى الوظيفي المستهدف
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               required
               placeholder="مثال: مسوق عقاري، مهندس مدني..."
               className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
@@ -151,11 +195,11 @@ export default function CampaignPage({ params }: PageProps) {
           {/* Target Companies */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <Building2 size={18} className="text-purple-500"/>
+              <Building2 size={18} className="text-purple-500" />
               القطاعات أو الشركات المستهدفة
             </label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="مثال: شركات المقاولات، معارض السيارات، عيادات الأسنان..."
               className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
               value={companies}
@@ -167,34 +211,65 @@ export default function CampaignPage({ params }: PageProps) {
           {/* City Selection */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <MapPin size={18} className="text-red-500"/>
-              النطاق الجغرافي
+              <MapPin size={18} className="text-red-500" />
+              النطاق الجغرافي (اختر حتى 3 مدن)
             </label>
+
+            {/* عرض المدن المختارة */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {selectedCities.map((c) => (
+                <div key={c} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-bold transition-all ${c === ALL_CITIES_OPTION ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                  <span>{c}</span>
+                  <button
+                    type="button"
+                    onClick={() => removeCity(c)}
+                    className="hover:bg-black/10 rounded-full p-0.5 transition-colors"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+              {selectedCities.length === 0 && (
+                <span className="text-gray-400 text-sm py-1.5">لم يتم اختيار أي مدينة بعد</span>
+              )}
+            </div>
+
+            {/* القائمة المنسدلة */}
             <div className="relative">
-              <select 
-                className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none appearance-none cursor-pointer"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
+              <select
+                // التعطيل هنا إذا كان "جميع المدن" مختاراً
+                disabled={isAllCitiesSelected}
+                // تغيير الكلاس لتظهر باهتة (Dimmed)
+                className={`w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-red-500 outline-none appearance-none transition-colors 
+                  ${isAllCitiesSelected ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-gray-50 cursor-pointer'}`}
+                onChange={handleCitySelect}
+                defaultValue=""
               >
+                <option value="" disabled>أضف مدينة للقائمة...</option>
+                {/* إخفاء خيار جميع المدن إذا كان مختاراً بالفعل لتجنب التكرار البصري، رغم أن القائمة معطلة */}
+                {!isAllCitiesSelected && (
+                  <option value={ALL_CITIES_OPTION} className="font-bold text-red-600">--- {ALL_CITIES_OPTION} ---</option>
+                )}
                 {SAUDI_CITIES.map((c) => (
                   <option key={c} value={c}>{c}</option>
                 ))}
               </select>
-              <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+              <div className={`absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none ${isAllCitiesSelected ? 'text-gray-300' : 'text-gray-400'}`}>
                 ▼
               </div>
             </div>
+
           </div>
 
           {/* CV Upload */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700 flex items-center gap-2">
-              <FileText size={18} className="text-orange-500"/>
+              <FileText size={18} className="text-orange-500" />
               السيرة الذاتية (CV)
             </label>
             <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 bg-gray-50 text-center hover:bg-gray-100 transition-colors cursor-pointer relative group">
-              <input 
-                type="file" 
+              <input
+                type="file"
                 accept=".pdf"
                 required
                 onChange={handleFileChange}
@@ -206,7 +281,7 @@ export default function CampaignPage({ params }: PageProps) {
                 </div>
                 {cvFile ? (
                   <div className="flex items-center gap-2 bg-green-50 px-3 py-1 rounded-lg">
-                    <CheckCircle size={14} className="text-green-600"/>
+                    <CheckCircle size={14} className="text-green-600" />
                     <span className="text-green-700 font-bold text-sm">{cvFile.name}</span>
                   </div>
                 ) : (
@@ -222,7 +297,7 @@ export default function CampaignPage({ params }: PageProps) {
           {/* Notes */}
           <div className="space-y-2">
             <label className="text-sm font-bold text-gray-700">ملاحظات إضافية (اختياري)</label>
-            <textarea 
+            <textarea
               rows={3}
               className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-gray-400 outline-none transition-all resize-none"
               placeholder="أي تفاصيل أخرى تود إخبارنا بها..."
@@ -232,8 +307,8 @@ export default function CampaignPage({ params }: PageProps) {
           </div>
 
           {/* Submit Button */}
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={loading}
             className="w-full bg-[#2563eb] hover:bg-blue-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all flex justify-center items-center gap-2 mt-4 disabled:opacity-70 disabled:cursor-not-allowed"
           >
