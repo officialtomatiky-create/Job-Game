@@ -3,7 +3,7 @@ version: '3.8'
 services:
   watcher:
     build:
-      context: ./TheWatcherGo
+      context: .
       dockerfile: Dockerfile
     container_name: the-watcher-app
     restart: always
