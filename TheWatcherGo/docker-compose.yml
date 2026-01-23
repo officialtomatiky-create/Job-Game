@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  watcher:
+    build:
+      context: ./TheWatcherGo
+      dockerfile: Dockerfile
+    container_name: the-watcher-app
+    restart: always
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
+    networks:
+      - ${DB_Network_Name}
+networks:
+  production_network:
+    external: true
+    name: ${DB_Network_Name}
