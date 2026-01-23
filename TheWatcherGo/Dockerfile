@@ -1,5 +1,5 @@
 # 1. مرحلة البناء (Builder Stage)
-FROM golang:1.21-alpine AS builder
+FROM golang:alpine AS builder
 
 # إعداد مسار العمل
 WORKDIR /app
