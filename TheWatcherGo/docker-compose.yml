@@ -11,8 +11,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - N8N_WEBHOOK_URL=${N8N_WEBHOOK_URL}
     networks:
-      - ${DB_Network_Name}
+      - sss4g8gkwk80cw8kk888sgo4
 networks:
-  production_network:
+  sss4g8gkwk80cw8kk888sgo4:
     external: true
-    name: ${DB_Network_Name}
