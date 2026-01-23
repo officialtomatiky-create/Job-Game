@@ -121,6 +121,6 @@ func checkAndTrigger(db *sql.DB, webhookURL string) {
 
 	} else {
 		// طباعة نقطة فقط للدلالة على أن النظام يعمل
-		fmt.Println(".")
+		//fmt.Println(".")
 	}
 }
